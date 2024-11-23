@@ -5,9 +5,10 @@ const matter = require("gray-matter");
 
 async function generate() {
   const feed = new RSS({
-    title: "Whisker -- personal blog built with nextra and nextjs",
-    site_url: "https://frontendweb3.github.io/nextra-blog/",
-    feed_url: "https://frontendweb3.github.io/nextra-blog/feed.xml",
+    title:
+      "Whisker's Blog - Learn all about blockchain, cryptography and more!",
+    site_url: "https://atrexus.github.io/",
+    feed_url: "https://atrexus.github.io/feed.xml",
   });
 
   const posts = await fs.readdir(path.join(__dirname, "..", "pages", "posts"));
@@ -21,12 +22,16 @@ async function generate() {
       );
       const frontmatter = matter(content);
 
+      const categories = frontmatter.data.tag
+        ? frontmatter.data.tag.split(",").map((tag) => tag.trim())
+        : [];
+
       feed.item({
         title: frontmatter.data.title,
         url: "/posts/" + name.replace(/\.mdx?/, ""),
         date: frontmatter.data.date,
         description: frontmatter.data.description,
-        categories: frontmatter.data.tag.split(","),
+        categories: categories,
         author: frontmatter.data.author,
       });
     })

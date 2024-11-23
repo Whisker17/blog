@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title><![CDATA[Whisker's Blog - Learn all about blockchain, cryptography and more!]]></title>
+        <description><![CDATA[Whisker's Blog - Learn all about blockchain, cryptography and more!]]></description>
+        <link>https://atrexus.github.io/</link>
+        <generator>RSS for Node</generator>
+        <lastBuildDate>Sat, 23 Nov 2024 05:56:38 GMT</lastBuildDate>
+        <atom:link href="https://atrexus.github.io/feed.xml" rel="self" type="application/rss+xml"/>
+        <item>
+            <title><![CDATA[Fraud Proof in OP Stack]]></title>
+            <description><![CDATA[This blog explores how the Windows process working set can be manipulated to detect external memory access using a custom working set watcher in C++.]]></description>
+            <link>/posts/fraud-proof-in-op-stack</link>
+            <guid isPermaLink="true">/posts/fraud-proof-in-op-stack</guid>
+            <pubDate>Sat, 27 Jan 2024 13:28:19 GMT</pubDate>
+        </item>
+    </channel>
+</rss>
