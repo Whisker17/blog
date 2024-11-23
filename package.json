@@ -7,17 +7,20 @@
     "build": "pnpm feed && next build",
     "start": "next start",
     "lint": "next lint",
-    "feed":"node scripts/gen-rss.js"
+    "feed": "node scripts/gen-rss.js"
   },
   "dependencies": {
     "autoprefixer": "^10.4.13",
     "gray-matter": "4.0.3",
+    "katex": "^0.16.11",
     "next": "13.1.1",
     "nextra": "2.0.3",
     "nextra-theme-blog": "2.0.3",
     "postcss": "^8.4.20",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
     "rss": "1.2.2",
     "sharp": "^0.31.3",
     "tailwindcss": "^3.2.4"

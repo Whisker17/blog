@@ -1,0 +1,63 @@
+---
+slug: kroma
+title: A Deep Dive into Kroma's ZK Fraud Proof Design
+date: 2024-02-06
+description: This blog explores how Kroma implement a zk fraud proof system.
+tags: [rollup, fraud proof, zk]
+---
+
+Kroma is a Layer 2 solution built on Op-Stack, but it takes a different route in its system design compared to Optimism. It has pioneered the implementation of zk fraud proof and boasts a more decentralized node architecture. Let's delve into the details of Kroma's ZK Fraud Proof design and its modifications to Op-Stack.
+
+## Verifier Modifications and Adaptations
+
+In Kroma, the Verifier is renamed as Validator, and the functionality of op-proposer is integrated into Validator. This means the L2 state root/checkpoint root will be submitted to the `L2OutputOracle` contract by the Validator. Additionally, the validator introduces the off-chain components of zk prover to assist in completing zk fraud proof.
+
+### Submitting State Root/Checkpoint Root
+
+#### Prerequisite
+
+Deploy the ValidatorPool contract on L1. Validators stake in this contract to qualify for prioritized submission of checkpoint roots.
+
+#### Workflow
+
+1. Rollup node/op-node fetches the latest finalized block from L1 and derives L2 blocks from it.
+
+2. Validators periodically query the rollup node for the L2 state root.
+
+3. In the L1 output root submission phase, the validator submits the L2 output root to the L1's L2OutputOracle contract. This involves two periods:
+
+   - Submitted by a randomly selected validator from the set in `ValidatorPool`.
+
+   - If not submitted, it enters a public submission phase where all validators can submit.
+
+4. If an L1 reorg occurs, the Validator can revert by sending the L1 block number and hash to `L2OutputOracle`.
+
+## Performing zk Fraud Proof
+
+![Kroma workflow](/images/blog/kroma.png)
+
+When a validator detects an invalid L2 output root, it triggers the `Colosseum` contract to initiate a challenge. The `Colosseum` contract conducts a bisection process using op-geth to obtain the complete execution trace and identify the disputed block.
+
+### Bisection
+
+Kroma sets a default of 1800 L2 blocks (configurable) for submitting a checkpoint root. The bisection process aims to select problematic L2 blocks.
+
+### ProveFault
+
+Upon identifying a disputed block, the L2 validator calls the off-chain zk Prover component, invoking an external proof system via RPC:
+
+- Obtain proof and pair by specifying the disputed block number.
+
+- Get a common input using the block number and chainId.
+
+Constructing relevant transactions off-chain and triggering the `Colosseum` contract completes subsequent calls, including:
+
+1. Verification of the proof by the on-chain `zkVerifier` contract.
+
+2. Removal of the corresponding output from the `L2OutputOracle` contract.
+
+### Security Council Modifications
+
+If fatal issues arise during the zk fraud proof process, such as integrity errors in zk or contradictions between multiple zk proofs, the security council intervenes. It inspects outputs completed through the bisection process but not verified through fraud proof and removes them.
+
+With this, Kroma's ZK Fraud Proof is successfully concluded.

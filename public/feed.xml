@@ -4,14 +4,14 @@
         <description><![CDATA[Whisker's Blog - Learn all about blockchain, cryptography and more!]]></description>
         <link>https://whisker17.vercel.app/</link>
         <generator>RSS for Node</generator>
-        <lastBuildDate>Sat, 23 Nov 2024 06:25:54 GMT</lastBuildDate>
+        <lastBuildDate>Sat, 23 Nov 2024 07:45:45 GMT</lastBuildDate>
         <atom:link href="https://whisker17.vercel.app/feed.xml" rel="self" type="application/rss+xml"/>
         <item>
-            <title><![CDATA[How to Develop ZK Fraud Proof with RISC0]]></title>
-            <description><![CDATA[This blog explores how to use Risc0 to build a zk fraud proof system.]]></description>
-            <link>/posts/zk-fraud-proof-by-using-risc0</link>
-            <guid isPermaLink="true">/posts/zk-fraud-proof-by-using-risc0</guid>
-            <pubDate>Mon, 29 Jan 2024 13:28:19 GMT</pubDate>
+            <title><![CDATA[A Deep Dive into RIP-7560]]></title>
+            <description><![CDATA[This blog explores how RIP-7560 works, which is a native Account Abstraction proposal in Ethereum ecosystem.]]></description>
+            <link>/posts/rip-7560</link>
+            <guid isPermaLink="true">/posts/rip-7560</guid>
+            <pubDate>Mon, 05 Feb 2024 00:00:00 GMT</pubDate>
         </item>
         <item>
             <title><![CDATA[Fraud Proof in OP Stack]]></title>
@@ -21,11 +21,32 @@
             <pubDate>Sat, 27 Jan 2024 13:28:19 GMT</pubDate>
         </item>
         <item>
+            <title><![CDATA[A Deep Dive into Kroma's ZK Fraud Proof Design]]></title>
+            <description><![CDATA[This blog explores how Kroma implement a zk fraud proof system.]]></description>
+            <link>/posts/kroma</link>
+            <guid isPermaLink="true">/posts/kroma</guid>
+            <pubDate>Tue, 06 Feb 2024 00:00:00 GMT</pubDate>
+        </item>
+        <item>
             <title><![CDATA[A Deep Dive into Cannon]]></title>
             <description><![CDATA[This blog explores how Cannons work in the op stack, which is a fraud proof system designed by Optimism.]]></description>
             <link>/posts/cannon-deep-dive</link>
             <guid isPermaLink="true">/posts/cannon-deep-dive</guid>
             <pubDate>Sun, 28 Jan 2024 13:28:19 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[How to Develop ZK Fraud Proof with RISC0]]></title>
+            <description><![CDATA[This blog explores how to use Risc0 to build a zk fraud proof system.]]></description>
+            <link>/posts/zk-fraud-proof-by-using-risc0</link>
+            <guid isPermaLink="true">/posts/zk-fraud-proof-by-using-risc0</guid>
+            <pubDate>Mon, 29 Jan 2024 13:28:19 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[MultiSig in Substrate]]></title>
+            <description><![CDATA[This blog explores how MultiSig works in Substrate.]]></description>
+            <link>/posts/multisig-in-substrate</link>
+            <guid isPermaLink="true">/posts/multisig-in-substrate</guid>
+            <pubDate>Mon, 03 Apr 2023 00:00:00 GMT</pubDate>
         </item>
     </channel>
 </rss>

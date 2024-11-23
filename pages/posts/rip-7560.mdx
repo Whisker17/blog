@@ -1,0 +1,66 @@
+---
+slug: rip-7560
+title: A Deep Dive into RIP-7560
+date: 2024-02-05
+description: This blog explores how RIP-7560 works, which is a native Account Abstraction proposal in Ethereum ecosystem.
+tags: [EIP, aa, Ethereum]
+---
+
+We know that [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337) implements Account Abstraction (AA) on the application layer above the Ethereum protocol itself. This is done mainly to minimize changes to the protocol layer itself, allowing it to better adapt to rapidly iterating AA schemes. However, due to its high-level nature detached from the protocol itself, it introduces additional overhead and usage costs. For developers, serving both External Owned Account (EOA) and ERC-4337 contract accounts increases development costs. So, how can we design a Native AA solution to provide better services for developers? [RIP-7560](https://github.com/ethereum/RIPs/blob/master/RIPS/rip-7560.md) proposes a possible solution.
+
+## What Changes Have Been Made
+
+### Introduction of New Transaction Type
+
+As a native AA solution, we need to introduce a new transaction type to differentiate it from regular transactions. In RIP-7560, a new transaction type based on [EIP-2718](https://eips.ethereum.org/EIPS/eip-2718) is introduced: `AA_TX_TYPE` / `TransactionType4`. Its on-chain structure is as follows:
+
+```typescript
+struct TransactionType4 {
+    address sender;
+    uint256 nonce;
+    uint256 validationGasLimit;
+    uint256 paymasterGasLimit;
+    uint256 callGasLimit;
+    uint256 maxFeePerGas;
+    uint256 maxPriorityFeeGas;
+    uint256 builderFee;
+    bytes paymasterData;
+    bytes depolyerData;
+    bytes callData;
+    bytes signature;
+}
+```
+
+Developers can now directly use `eth_sendTransaction` and `eth_sendRawTransaction` to send transactions, unlike ERC-4337, where `sendUserOperation` is used. This native compatibility helps developers design more complex transactions at a lower level, reducing dependencies on external contracts.
+
+### Modification of Transaction Structure
+
+Since AA transaction verification and execution are done separately, RIP-7560 introduces a counting header transaction type to help execution layer clients (e.g., geth) determine how many AA transactions are in each batch, allowing for parallel execution to improve scalability and throughput.
+
+Additionally, the incremental design of nonce hinders the parallel execution of transactions. For sequential nonces, the next transaction can only be executed after the previous one is completed. Therefore, a two-dimensional nonce based on (address, key) and sequence is maintained in the contract, and the increment operation is performed on the nonce before other verifications.
+
+### Gas Design and Optimization
+
+1. With the native design of AA, users will no longer need to pledge in the EntryPoint contract to obtain the Paymaster's gas fee sponsor function. Instead, gas fees are paid by the native Externally Owned Account (EOA) just like regular transactions. Gas fee calculation has been redesigned due to changes in transaction types:
+
+$$maxPossibleGasCost = AA\_BASE\_GAS\_COST + callGasLimit + paymasterGasLimit + validationGasLimit$$
+
+2. In addition to the gas required for transactions, the cost of packing transactions and sending packed transactions from Layer-2 to Layer-1 needs to be considered. Therefore, a `builderFee` is introduced as an off-chain fee for the builder's work.
+
+3. Furthermore, a penalty mechanism for unused gas is introduced to reduce unnecessary network capacity reservations. For example, in a group of AA transactions, if tx_1 completes verification using only a small amount of gas, and tx_2 sets a flag during verification that affects tx_1's execution phase, a significant amount of unnecessary gas may be consumed. To address this, the builder needs to add transactions sequentially and simulate transactions to ensure correct gas usage.
+
+### Support for Multiple Execution Frames
+
+Developers can design multiple execution frames in transactions, changing the order and dependencies of different execution frames to achieve efficient execution of complex transactions. For example, frames can be divided into:
+
+- Nonce verification frame
+
+- Sender deployment frame
+
+- Sender verification frame
+
+- Paymaster verification frame
+
+- Sender execution frame
+
+- Paymaster post-execution frame
