@@ -1,0 +1,57 @@
+---
+slug: cannon-deep-dive
+title: A Deep Dive into Cannon
+date: 2024-01-28T13:28:19.051Z
+description: This blog explores how Cannons work in the op stack, which is a fraud proof system designed by Optimism.
+tags: [rollup, fraud proof]
+---
+
+In the previous introduction, we learned that in the fraud proof system of the OP Stack, an FPVM is required to implement the functionality of the state transition function. Since fraud proofs are compiled into MIPS instructions, it is crucial to understand how to run and identify them both on-chain and off-chain. We need to run MIPS instructions off-chain, identify problematic instructions, and challenge them on-chain. Therefore, we require:
+
+- On-chain development and deployment of a MIPS interpreter using Solidity.
+- Off-chain implementation of a MIPS environment in Go to run MIPS.
+
+## What is Cannon
+
+Cannon is a fraud-proof VM designed by Optimism. As a MIPS instruction simulator, it helps execute on-chain simulations of single-instruction steps in Geth's state transition. This verifies the correctness of claims about the L2 state. Cannon consists of two parts: the off-chain MIPS emulator (mipsevm) and on-chain contracts.
+
+## Component Analysis
+
+### mipsevm
+
+Mipsevm simulates the execution process of MIPS.sol using Golang. It serves as the minimal Golang implementation of MIPS, providing a loader for running MIPS binaries on-chain and off-chain, loading MIPS binary files, and preparing data before execution.
+
+When Cannon loads a program into the initial state and converts it into individual steps, it loads it into mipsevm. The state is maintained through mipsevm's step-by-step execution, ensuring consistency with on-chain execution and completing the state transition from the pre-state to the post-state.
+
+The currently supported instructions for mipsevm can be found [here](https://github.com/ethereum-optimism/optimism/blob/develop/cannon/mipsevm/README.md).
+
+### On-chain Contracts
+
+In Cannon, a series of on-chain contracts needs to be deployed to collaborate with the off-chain system for fraud proof.
+
+#### `MIPS.sol`
+
+This is an on-chain MIPS instruction interpreter for EVM. It accepts MIPS instructions and executes them, validating the execution of a single MIPS instruction. When it receives a state access, it calls an external PreimageOracle contract to retrieve relevant data.
+
+#### `PreimageOracle.sol`
+
+Preimage Oracle serves as the only communication bridge between FPP and FPVM in Fraud Proof (Cannon and FPP in Optimism). It returns different data by receiving different preimage request types (specified by the first byte of the request). Details on request types can be found [here](https://github.com/ethereum-optimism/optimism/blob/develop/specs/fault-proof.md#pre-image-oracle).
+
+## Cannon Workflow
+
+![Cannon Workflow](/images/blog/cannon-workflow.png)
+
+1. Compile `op-program` into MIPS instructions (mipsevm), generate the initial state file for fraud proof (state.json). Op-challenger receives this information through callbacks and completes the creation of contracts.
+2. `Op-sequencer` and `op-challenger` perform bisection in the `FaultDisputeGame` contract to confirm the disputed instruction finally.
+3. Pass the disputed instruction to the MIPS contract, confirming the fault proof based on local and global state information.
+
+## Instruction Set Selection
+
+In the OP Stack, Optimism chose the MIPS instruction set as the compilation target for opcodes. Other common instruction sets (ISAs) include RISC-V and WASM. Here is a comparison of these ISAs.
+
+| Issue                     | **MIPS**                                        | **RISC-V**                              | **WASM**                                                  |
+| ------------------------- | ----------------------------------------------- | --------------------------------------- | --------------------------------------------------------- |
+| System Modification Level | Supports Golang, no modification to Geth needed | Compile EVM into RISC-V instruction set | Some challenges in the process of compatibility with Geth |
+| Complexity                | Lightweight interpreter                         | Complex                                 | Complex                                                   |
+| Bit Support               | 32-bit                                          | 64-bit                                  | 64-bit                                                    |
+| Ecosystem Support         | Limited                                         | Extensive                               | Mature                                                    |

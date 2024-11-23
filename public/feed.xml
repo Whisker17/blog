@@ -2,16 +2,30 @@
     <channel>
         <title><![CDATA[Whisker's Blog - Learn all about blockchain, cryptography and more!]]></title>
         <description><![CDATA[Whisker's Blog - Learn all about blockchain, cryptography and more!]]></description>
-        <link>https://atrexus.github.io/</link>
+        <link>https://whisker17.vercel.app/</link>
         <generator>RSS for Node</generator>
-        <lastBuildDate>Sat, 23 Nov 2024 05:56:38 GMT</lastBuildDate>
-        <atom:link href="https://atrexus.github.io/feed.xml" rel="self" type="application/rss+xml"/>
+        <lastBuildDate>Sat, 23 Nov 2024 06:25:54 GMT</lastBuildDate>
+        <atom:link href="https://whisker17.vercel.app/feed.xml" rel="self" type="application/rss+xml"/>
+        <item>
+            <title><![CDATA[How to Develop ZK Fraud Proof with RISC0]]></title>
+            <description><![CDATA[This blog explores how to use Risc0 to build a zk fraud proof system.]]></description>
+            <link>/posts/zk-fraud-proof-by-using-risc0</link>
+            <guid isPermaLink="true">/posts/zk-fraud-proof-by-using-risc0</guid>
+            <pubDate>Mon, 29 Jan 2024 13:28:19 GMT</pubDate>
+        </item>
         <item>
             <title><![CDATA[Fraud Proof in OP Stack]]></title>
-            <description><![CDATA[This blog explores how the Windows process working set can be manipulated to detect external memory access using a custom working set watcher in C++.]]></description>
+            <description><![CDATA[This blog explores how fraud proofs work in the op stack.]]></description>
             <link>/posts/fraud-proof-in-op-stack</link>
             <guid isPermaLink="true">/posts/fraud-proof-in-op-stack</guid>
             <pubDate>Sat, 27 Jan 2024 13:28:19 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[A Deep Dive into Cannon]]></title>
+            <description><![CDATA[This blog explores how Cannons work in the op stack, which is a fraud proof system designed by Optimism.]]></description>
+            <link>/posts/cannon-deep-dive</link>
+            <guid isPermaLink="true">/posts/cannon-deep-dive</guid>
+            <pubDate>Sun, 28 Jan 2024 13:28:19 GMT</pubDate>
         </item>
     </channel>
 </rss>

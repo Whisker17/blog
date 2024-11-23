@@ -7,8 +7,8 @@ async function generate() {
   const feed = new RSS({
     title:
       "Whisker's Blog - Learn all about blockchain, cryptography and more!",
-    site_url: "https://atrexus.github.io/",
-    feed_url: "https://atrexus.github.io/feed.xml",
+    site_url: "https://whisker17.vercel.app/",
+    feed_url: "https://whisker17.vercel.app/feed.xml",
   });
 
   const posts = await fs.readdir(path.join(__dirname, "..", "pages", "posts"));

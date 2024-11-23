@@ -2,7 +2,7 @@
 slug: fraud-proof-in-op-stack
 title: Fraud Proof in OP Stack
 date: 2024-01-27T13:28:19.051Z
-description: This blog explores how the Windows process working set can be manipulated to detect external memory access using a custom working set watcher in C++.
+description: This blog explores how fraud proofs work in the op stack.
 tags: [rollup, fraud proof]
 ---
 
@@ -29,7 +29,7 @@ Considering the challenges posed by non-interactive fraud proof, the interactive
 
 ### Comparison of Interactive and Non-Interactive Fraud Proof
 
-| Aspect                     | Interactive Fraud Proof                                                                                     | Non-Interactive Fraud Proof                                                                  |
+| Aspect                     | **Interactive Fraud **Proof                                                                                 | **Non-Interactive Fraud Proof**                                                              |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | **Time Efficiency**        | Time is extended, high requirements for short-term on-chain interactions, limited by interaction efficiency | Verification time is relatively stable compared to interactive fraud proof                   |
 | **Client Modification**    | Requires minimal modifications to the client                                                                | Requires significant modifications to the client to support L1's simulation of L2 operations |
@@ -52,13 +52,13 @@ Fraud Proof Program (FPP) is designed as a Client-Server architecture system. It
 
 As a **stateless (deterministic, the same input yields the same output)** middleware, it verifies claims about L2 state transitions. It applies L1 data to the finalized L2 state, reconstructs the latest L2 state, fetches data through the Preimage Oracle, and completes state changes in memory. This process involves two steps:
 
-1. In op-node, processes L1 blocks into L2 block bodies.
-2. In op-geth, reconstructs L2 state from L2 block bodies.
+1. In `op-node`, processes L1 blocks into L2 block bodies.
+2. In `op-geth`, reconstructs L2 state from L2 block bodies.
 
 FPP consists of two components:
 
-- [op-program-client](https://github.com/ethereum-optimism/optimism/tree/develop/op-program/client): Responsible for receiving parameters of Layer 2 blocks, compiling them into MIPS instructions, and loading them into the Cannon MIPS simulator to provide the initial state for disputes.
-- [op-program-host](https://github.com/ethereum-optimism/optimism/tree/develop/op-program/host): Functions as the server environment for op-program-client, providing the necessary basic data for op-program-client to replay blocks.
+- [`op-program-client`](https://github.com/ethereum-optimism/optimism/tree/develop/op-program/client): Responsible for receiving parameters of Layer 2 blocks, compiling them into MIPS instructions, and loading them into the Cannon MIPS simulator to provide the initial state for disputes.
+- [`op-program-host`](https://github.com/ethereum-optimism/optimism/tree/develop/op-program/host): Functions as the server environment for op-program-client, providing the necessary basic data for op-program-client to replay blocks.
 
 #### Fraud Proof Virtual Machine (FPVM)
 
