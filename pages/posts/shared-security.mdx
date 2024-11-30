@@ -1,0 +1,81 @@
+---
+slug: shared-security
+title: How to Provide Shared Security for Multiple Chains
+date: 2023-04-28
+description: The article compares different approaches to providing shared security across multiple chains, focusing on how Polkadot's parachain design and Cosmos' Interchain Security tackle this challenge, while also briefly discussing Ethereum's Rollup solutions for context.
+tags: [substrate, polkadot, Cosmos]
+---
+
+Security has always been a hot topic in the blockchain industry. Everyone wants their assets to be free from potential risks caused by system design flaws. Therefore, discussions on security will never cease. As we approach the tenth anniversary of Ethereum's inception, people are still coming up with different ideas to ensure the security of blockchain networks. We have seen various Rollup solutions emerge in recent years, as well as proposals like restake by EigenLayer, all making their own contributions to improving the security of L1/L2 chains. Of course, we also see sharding solutions such as Polkadot and Cosmos continuously exploring their security guarantees in the market. In this article, we will introduce the security solutions brought by Polkadot and Cosmos.
+
+## Rollups
+
+First, let's briefly introduce the two types of Rollups proposed in the Ethereum ecosystem.
+
+Simply put, the current Rollup solutions use the settlement layer to provide security and finality for their transactions, which can be divided into Optimistic Rollups and ZK Rollups.
+
+Optimistic Rollups are interactive or semi-interactive solutions that rely on optimistic block production and fraud-proof measures. They are not limited by the complexity of the on-chain virtual machine and support a large amount of data in the state transition function (STF). However, due to the possibility of evil sequencers or unexecuted blocks submitted by sequencers, there is a requirement for sequencer selection logic that needs to be built into the contract. In addition to the sequencer issue, an extended challenge period (over several days) can result in higher finality time requirements.
+
+ZK Rollups, on the other hand, are non-interactive solutions that use zero-knowledge proofs to prove validity. Due to cryptographic sharding for trust, their data availability requirements are very low, and their finality is also very fast, albeit at the cost of high computational overhead. However, due to the complexity of ZK circuits, it isn't easy to build a Turing-complete system, and constant attention must be given to optimizing circuit complexity.
+
+Rollups also bring a serious problem - the allocation of block space. In addition to network congestion, these two solutions also raise concerns about on-chain costs - the cost of executing the interactive protocol in Optimistic Rollups and the on-chain costs of submitting and executing proofs in ZK Rollups.
+
+## Polkadot parachain shared security design
+
+Simply put, the Relay Chain is Polkadot's central chain, containing only a few types of transactions, and users stake DOTs on the Relay Chain to ensure the security of the entire system.
+
+In order to better understand Polkadot's parachain design, let's first introduce the roles and responsibilities of the block producing in Polkadot's overall architecture:
+
+- Collator
+
+  - They collect transactions from the parachain and provide proof of state transfer to the validator of the relay chain, similar to the validator role on other blockchains, but the collator does not need to provide security guarantees as the relay chain provides these, and the validator on the relay chain will reject blocks if they are invalid.
+
+- Validator
+
+  - The role of producing blocks in the Relay Chain also accepts state transition proof from **Collators**
+
+  - The Validator needs to store locally a sufficient number of parachain blocks that are retrievable by other nodes that lack them so that they can be combined to confirm the proof of validity of published parachain blocks.
+
+  - In addition to verifying the validity of the information in a given parachain block, the validator will also participate in consensus, generating relay chain blocks based on the validity proofs of other validators
+
+So how does such a layered parachain design guarantee security?
+
+First, the collators of each parachain collect transactions over a period of time and generate the relevant Proof-of-Validity (PoV), send the blocks and PoV to the para-validators (a random subset of validators), and after validation, the validators broadcast this information to the other validators, eventually reaching consensus.
+
+There is also a restriction on the collator: **if the candidate block submitted by the collator has not been successfully validated by the validators on the relay chain, he will not be able to continue producing blocks on the parallel chain.**
+
+![](/images/blog/shared-security-1.png)
+
+Polkadot parachain design is architecturally similar to ZK Rollups in that it submits the relevant proof of validity, and chooses to implement an interactive protocol similar to OP Rollups as a heterogeneous slice execution layer. For DA, Polkadot does not need to write L2 `calldata` to L1 blocks as in Ethereum's Rollups, and its DA protocol in Polkadot does not require all Relay Chain nodes to maintain a parachain state.
+
+## Cosmos Interchain Security design
+
+First, Interchain Security (ICS) proposes two new chain roles - the **Provider Chain** and the **Consumer Chain** - the Provider Chain is the chain that provides security for the Consumer Chain and manages the validator set, which in Cosmos is typically the Cosmos Hub; and the Consumer Chain is the chain that borrows security from the Provider Chain.
+
+We enable the Provider Chain to provide security for multiple Consumer Chains through Cross-Chain Validation (CCV), where the validator set on the Consumer Chain is provided by the Provider Chain. When validators misbehave on the Consumer Chain, their tokens bonded to the Provider Chain are reduced. The security gained from the value of the tokens bonded to the Provider Chain is therefore shared with the Consumer Chain.
+
+First of all, the design of Interchain Security is of great significance, as the Cosmos Hub was originally designed as a Practical Hub Minimalism, and if we implement ICS, we can split many of the functions in the hub into a Consumer chain and enjoy the same security as the Cosmos Hub.
+
+Three versions of the ICS design have now been released, of which:
+
+### V1 - Full validator set provides security
+
+All Provider chain validators are required to participate in the validation of the Consumer chain, and a new chain registry module needs to be added through the governance of the Provider chain. If the Consumer chain has a design-related governance token, it may be issued to the relevant validator as a reward, but this is not required.
+
+![](/images/blog/shared-security-2.png)
+
+### V2 - Partial validator set
+
+The introduction of a Validator allows you to choose whether or not to join the Chain Registry of the Consumer Validator set. If you choose to join the Chain Registry, these validators will no longer be part of the Cosmos hub, but a separate network.
+
+![](/images/blog/shared-security-3.png)
+
+### V3 - Layered Security
+
+A new wrapper staking module with additional functionality has been created to allow the Consumer chain to create its own staking design to extend the validator set borrowed from the Provider chain. The security of the Consumer Chain will then be made up of the validator set that the Provider Chain is willing to provide for the security of the Consumer Chain, and the validator set that the Consumer Chain itself provides.
+
+![](/images/blog/shared-security-4.png)
+
+## Ending
+
+Currently, different ecosystems have chosen different methods to provide security based on their own designs. It is important to understand that any new bootstrap chain in any ecosystem will be fragile at the beginning. We need to find ways to help them get through the stage of a small market cap and unstable token economics. This has been the persistent goal of various ecosystems.

@@ -1,0 +1,111 @@
+---
+slug: erc-4337
+title: ERC-4337 - From Zero To Hero
+date: 2023-05-01
+description: ERC-4337 introduces Account Abstraction through a system of smart contract wallets, bundlers, paymasters, and aggregators, evolving from basic EOA+CA model to a comprehensive solution that enables more flexible transaction handling and better user experience on Ethereum.
+tags: [aa, infra, eip]
+---
+
+We know that there are two account models in Ethereum, EOA and CA, and ERC-4337 as an Account Abstraction Scheme (a standard for meta transactions) has recently been announced for official deployment by [@Yoav](https://twitter.com/yoavw).
+
+## EOA + CA
+
+![](/images/blog/erc-4337-1.png)
+
+EOA, as a first-class citizen in the ecosystem, is the only entity that can trigger transactions, but CA, as a Turing-complete model, has more functional flexibility, such as multi-signature, multi-FA, and if we need to use these additional functions, we need to use EOA as a trigger to call a Smart Contract Wallet (aka. SCW). this is a simple AA model.
+
+An SCW contract needs to implement the processing of an op sent by an EOA. `execOp` is a contract call, so for the **UserOperation** design we need to keep all the parameters in `eth_sendTransaction`.
+
+![](/images/blog/erc-4337-2.png)
+
+But then we need to maintain two separate wallets of our own.
+
+## Introduce Executor
+
+So how do we optimize this design? We can choose to bring in a third party to help execute all the ops so that as users we don't have to call `execOp` ourselves.
+
+![](/images/blog/erc-4337-3.png)
+
+But there is an even more difficult problem with such a design. The Executor needs to ensure they are protected by the SCW's refund behavior, but how can they guarantee that the SCW will not misbehave?
+
+A simple idea emerges, we can simulate an `execOp` operation prior to execution to determine if the SCW will honestly refund gas, this approach solves the problem at hand, but again raises other issues, firstly adding a simulation process will result in an increase in the cost of gas, and more critically we need to ensure that there is no difference between the simulation and the actual execution. This requires us to ensure that the state is consistent, which eliminates any operations that could lead to state changes. As a key part of the onboarding of the blockchain, we can’t accept a wallet that can't be a fully functional wallet if we put a lot of restrictions on operations and can't use fields with state, such as the `blockNumber`.
+
+## Introduce EntryPoint
+
+We can ensure that the rights of the Executor are not compromised by introducing a **trusted** smart contract, EntryPoint, so that the refund process is handled by EntryPoint, which requires SCW to make a deposit in advance to ensure the success of the refund.
+
+![](/images/blog/erc-4337-4.png)
+
+However, we need to consider the security of the SCW, as the EntryPoint will refund regardless of the success of the transaction, and a rogue executor can get a gas refund for the transaction by sending a lot of ops that will fail.
+
+![](/images/blog/erc-4337-5.png)
+
+### Decouple the validation and execution
+
+Faced with such an attack, we can eliminate it by decoupling validation and execution, we only need to pay gas for valid transactions, so now in `handleOp` we will first call SCW's `validateOp` to ensure the validity of the op.
+
+![](/images/blog/erc-4337-6.png)
+
+But for the Executor, his rights seem to be violated once again. If a bad user sends a lot of invalid ops, the executor cannot forward these ops after validating them, so he will not be reimbursed for the gas he paid for the on-chain exchange, so he needs to validate the ops as well to protect his rights.
+
+![](/images/blog/erc-4337-7.png)
+
+### Economics Incentives
+
+We can also use the economic effect of EIP-1559 to provide some economic incentive to the Executor, which will increase the robustness of the whole network.
+
+![](/images/blog/erc-4337-8.png)
+
+## Introduce Bundler
+
+We can generalize the executor into a bundler that handles a large number of ops. The design now becomes one where users send ops to a mempool and the bundler bundles these ops into a transaction based on economics.
+
+![](/images/blog/erc-4337-9.png)
+
+## Introduce Paymaster
+
+The current design still requires the user themselves to pay for the gas with Ether, we can do this by introducing a Paymaster contract to pay for the gas, again we need to `validatePaymasterOp` to ensure it doesn't generate nefarious behavior.
+
+![](/images/blog/erc-4337-10.png)
+
+This way our Refund process no longer needs to be done by our respective SCWs.
+
+![](/images/blog/erc-4337-11.png)
+
+## Introduce Paymaster Reputation System
+
+However, since the Paymaster contract is a shared storage space, even a valid op can be invalidated by a previous doom op, so we can prevent some DoS attacks by introducing an on-chain reputation system, i.e. each paymaster must stake at EntryPoint.
+
+![](/images/blog/erc-4337-12.png)
+
+We can add a stake using `addStake`, and if the paymaster wants to remove the stake, he must call `unlockStake` and wait a while before calling `withdrawlStake` to remove the stake.
+
+![](/images/blog/erc-4337-13.png)
+
+## Introduce postOp
+
+We could also implement a `postOp` function to get the gas cost that the transaction would incur, which could help us implement more complex logic.
+
+![](/images/blog/erc-4337-14.png)
+
+![](/images/blog/erc-4337-15.png)
+
+## Deploy By Factory
+
+So how do we do the contract deployment of the SCW? If we follow the normal method, then the EOA account is always the first-class citizen who controls the SCW, then we need to use the Factory contract while using the `CREATE2` method can fix the contract address, even if we haven't done any transaction, we can tell others our SCW address, which is very much in line with our understanding of the EOA.
+
+![](/images/blog/erc-4337-16.png)
+
+![](/images/blog/erc-4337-17.png)
+
+## Introduce Aggregator
+
+Finally, we can also introduce aggregators to reduce the cost of gas.
+
+![](/images/blog/erc-4337-18.png)
+
+![](/images/blog/erc-4337-19.png)
+
+## Outros
+
+In this way, we have presented the overall design idea of the ERC-4337 and the final choice of solution. Of course, we will make a series of trade-offs in the final engineering implementation, but in general, the design idea will follow the above presentation.
