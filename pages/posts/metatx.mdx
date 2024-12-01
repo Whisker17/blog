@@ -1,0 +1,101 @@
+---
+slug: metatx
+title: Jibber-Jabber On Meta Transactions
+date: 2023-05-01
+description: The article provides a comprehensive overview of meta transactions in Ethereum, explaining how they allow users to interact with the blockchain without directly paying gas fees by using relayers and various implementations like ERC-2612, ERC-2770/2771, and GSN, while also discussing their current limitations and challenges.
+tags: [aa, infra]
+---
+
+First of all, we need to understand that the design of gas on Ethereum is to ensure the security of the network and prevent some attacks by charging a fee for each calculation step in the chain. Currently, Ethereum only supports native Eth payments, which require all users to obtain Eth before they can use it through some CEX and then transfer it to their wallets, paying CEX a portion of the fees in the process. The design of a product that requires you to pay before you can use it is unacceptable to the general public. So the need for a gas payment alternative was born - a meta transaction.
+
+## The Concept of Meta Transactions
+
+Meta transactions are a scheme that allows users to interact on Ethereum without paying Eth to complete a transaction. It works by allowing users to sign a valid off-chain payload and then have a third party send and pay for the transaction - without the user having to pay the gas fees themselves. This allows users who do not have the necessary Eth to still transact on the blockchain.
+
+## Origin of The Design of Meta Transactions
+
+As we know, in Ether, the sender of a transaction generally acts as the payer of the transaction's gas, and the two are coupled, while meta transactions attempt to decouple the two and bring in a third party to pay for the gas.
+
+In ERC-20, for example, we make the ERC-20 token support both EOA account and contract interactions by abstracting `msg.sender` with `approve` and `transferFrom` functions, making it the token's access control mechanism. However, because `approve` is designed around `msg.sender`, ERC-20 initially requires an EOA account, and we cannot do this in one step with a smart contract (we need to approve first, and then make a smart contract call that uses transferFrom internally).
+
+So how do we decouple? We can use a new transaction method in the meta transaction to perform the off-chain signature that we need to pass to a third party for sending, i.e. we split the function of the approve function.
+
+## Ideas For Implementing Meta Transactions
+
+From a high-level perspective, the implementation of a meta transaction can be roughly divided into two steps:
+
+1. Verification of the meta-transaction signature
+
+2. Extracting the actual transaction data and sending the transaction via `delegateCall`
+
+### Minimum Viable Production
+
+![](/images/blog/metatx-1.png)
+
+As shown above, we can use a **Relayer** to perform the function of paying for gas on behalf of the customer.
+
+1. The **client** initiates a meta transaction that does not need to be on-chain (i.e. no gas) and sends it to a relayer server.
+
+2. The **relayer server** asks the **client** to complete the payment of the fee in some other way (an ERC20 token or real money).
+
+3. Once this is done, the **relayer** initiates a normal Ethereum transaction and changes the `msg.sender` to the client's address, completing a simple meta transaction system.
+
+But there are many problems with such a system.
+
+First of all, how do we guarantee the security of the relayer and how do we avoid the possibility of its mischief? The current system relies too much on it, and it also needs to ensure that there is enough Eth to pay for the gas.
+
+Secondly, the design is not adaptable to existing contracts and is not compatible with current contracts.
+
+## A Clash of Ideas in EIPs
+
+### ERC-2612
+
+Firstly, the ERC does not refer directly to meta transactions; its main purpose is to enable _approval_ by adding a `permit` method so that approval can be done with a signed message, rather than just a transaction.
+
+However, the implementation still retains the **r**, **s**, and **v** from the message owner's valid **secp256k1** signature as parameters, and a more general solution would be to use a **bytes signature**, which would be more abstract.
+
+### ERC-2770 && ERC-2771
+
+These two ERCs are a combined improvement, 2770 by using a **Forwarder** contract to verify the signature of a transaction in the chain and then parse out the signer and send it to the target contract, while 2771 defines a **Recipient** contract that receives meta transactions forwarded by the trusted Forwarder contract.
+
+To support calls made via the **Forwarder**, the **Recipient** contract must read the signer's address from the last 20 bytes of `msg.data`.
+
+![](/images/blog/metatx-2.png)
+
+## GSN Implementation
+
+As ERC-2770 and 2771 matured, more and more projects started to implement meta transactions, with the Gas Station Network (GSN) being one of the leading ones.
+
+The overall architecture of GSN is based on ERC-2770 and ERC-2771, with several contracts to implement meta transactions and the addition of **Paymaster** as a payment agent.
+
+![](/images/blog/metatx-3.png)
+
+From the above diagram we can see that
+
+1. The **client**, as the initiator of a gas-free transaction, signs the meta transaction and sends it to the **relayer server**.
+
+2. After receiving the request from the **client**, the **Relayer Server** verifies it and, once validated, initiates a normal Ethereum transaction to the mempool and also sends the signed transaction to the client for the user to verify again.
+
+3. The **RelayHub** contract is an intermediary system between the **client** and the **paymaster** that exists to support trust between them.
+
+4. The **Forwarder** contract sends the `signature` and `nonce` of the client (i.e. the original initiator of the transaction) to the **Recipient** contract for further processing. However, the contract requires a certain level of trust, in short, it requires verification of the signature and nonce.
+
+5. The **Recipient** contract parses the original transaction and completes the execution, but note that in the **Recipient** contract, we need to replace `msg.sender` with the already implemented `_msgSender()` function in order to use it. There is no more redundant validation in the **Recipient** contract, so security must be provided by the **Forwarder** contract.
+
+6. The **Paymaster** contract exists to implement all the gas refund logic, **Paymaster** maintains a balance book in **RelayHub** that calculates and transfers the various gas charges in a single meta transaction.
+
+![](/images/blog/metatx-4.png)
+
+## Current Problems with Meta Transactions
+
+While meta transactions can bring great convenience to the entire Ethereum ecosystem and can significantly lower the threshold for users, they also pose some unresolved problems.
+
+1. Due to the existence of multiple on-chain transactions, the gas cost to complete a meta-transaction can be more expensive than a normal transaction.
+
+2. Some dependency support is required, for example only for contracts that support [ERC-712](https://eips.ethereum.org/EIPS/eip-712).
+
+3. There are trustworthiness requirements for certain components of the system, such as the **Forwarder** contract in GSN.
+
+## Summary
+
+Meta transactions have been widely talked about for many years as an important design that can enhance the user experience in Ethereum, and improvements are constantly being made to the existing design solutions. For example, [EIP-6315](https://eips.ethereum.org/EIPS/eip-6315) proposes a solution to the trustworthiness requirement of the **Forwader** contract by adding an address exposure. I believe we can come up with a perfect solution in the near future that will make meta transactions an important part of Ethereum!

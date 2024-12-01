@@ -1,0 +1,75 @@
+---
+slug: ec
+title: Erasure Code Deep Dive
+date: 2023-07-17
+description: This article explains how Erasure Code works as a data redundancy technique in blockchain systems, exploring its mathematical principles (including checksum redundancy and Reed-Solomon Code), different encoding dimensions, and current challenges in providing efficient data availability and fault tolerance compared to traditional backup methods.
+tags: [da, infra]
+---
+
+People are constantly exploring more efficient methods to prevent accidental data loss. Traditional backup methods involve simple full replication, which can prevent single point failures. However, this approach significantly reduces storage efficiency.
+
+In the field of blockchain, the cost of on-chain storage is high, making inefficient storage solutions unacceptable. Erasure code, on the other hand, partitions data into multiple encoding blocks and generates redundant encoding blocks, thereby achieving data fault tolerance and recovery capabilities. Compared to traditional backup technologies, Erasure Code can utilize storage space more efficiently, providing better data availability and reliability.
+
+## Introduction
+
+In Erasure Code, the original data is divided into multiple data chunks, and redundant encoding chunks are generated using mathematical algorithms. These redundant encoding chunks contain redundant information of the original data, allowing for recovery even if some data chunks are lost or damaged, by utilizing the remaining redundant encoding chunks. The core idea of EC technology is to distribute the redundant information of data chunks across different storage nodes through distributed redundancy encoding, thereby providing high availability and fault tolerance for the data.
+
+In simpler terms, for a set of `k` data chunks of the same size, `m` additional parity chunks are added to ensure that even if `m` chunks (either data or parity) are lost, the lost data can still be recovered.
+
+## Principles of Mathematics
+
+There are various strategies for redundancy, and in this context, we will introduce two commonly used ones: checksum redundancy and Reed-Solomon Code.
+
+### Checksum redundancy
+
+Checksum redundancy is a simple redundancy strategy that generates redundant data based on the simple summation operation of the original data.
+
+Suppose we have a set of original data `d₁, d₂, d₃`. We can perform data recovery by employing different redundancy strategies.
+
+For example, with a redundancy strategy of `k+1` (indicating the need to generate one redundant data), we can store the redundant data `y₁ = d₁ + d₂ + d₃`. In this case, even if we lose any one of the data points, we can recover the original data `d₁, d₂, d₃` using the remaining three data points.
+
+Similarly, for a redundancy strategy of `k+2`, we need two redundant data points: `y₁ = d₁ + d₂ + d₃` and `y₂ = d₁ + 2d₂ + 4d₃`. With these two extended data points, we can obtain the original data.
+
+Following this pattern, when selecting a redundancy strategy of `k+m`, we would need `m` redundant data points: `y₁ = d₁ + d₂ + d₃, y₂ = d₁ + 2d₂ + 4d₃`, and so on, up to `yₘ = d₁ + md₂ + ((m-1)^2)d₃`.
+
+### Reed-Solomon Code
+
+Reed-Solomon (RS) code is a forward error correction code that utilizes polynomial operations during the encoding and decoding process. It allows arbitrary information to be expanded with redundant content. When this extended information is transmitted with noise, as long as the number of errors is below a predefined value, it can be perfectly corrected and decoded.
+
+The implementation of RS code is quite straightforward, relying on a commonly known geometric interpretation in polynomials: **By selecting `k` distinct points, a polynomial of degree at most `k-1` can be uniquely determined.**
+
+For example, two points can determine a line, and three points can determine a parabola.
+
+In the process of Erasure Code, we treat the original message as the coefficients of a polynomial and construct a polynomial of degree `k-1`. By adding values on this polynomial, we generate redundant data. For a `k-1` degree polynomial (the original message), selecting `n` distinct points ensures that any `k` points can uniquely determine the `k-1` degree polynomial (due to the non-zero determinant of the Vandermonde matrix, which is invertible).
+
+By using this approach, the Erasure Code algorithm can determine the polynomial representation of the original message by selecting different points and generate redundant data to provide fault tolerance and recovery capabilities.
+
+## Comparison of Coding Schemes in Different Dimensions
+
+In Reed-Solomon (RS) code, 1D, 1.5D, and 2D are different encoding schemes used for data redundancy and error correction, and they differ in terms of data redundancy and recovery capabilities.
+
+Simply put, 1D involves redundancy extension in a single direction (either row or column), 1.5D adds a partial extension in another direction (such as utilizing a commitment scheme), and 2D involves redundancy extension in both directions.
+
+If a malicious party wants to hide a chunk, the number of chunks they need to control varies depending on the encoding scheme in different dimensions:
+
+- For 1D RS encoding, `k` chunks are expanded to `2k` chunks. To hide one of the chunks, they need to make `k+1` chunks unavailable.
+
+- For 1.5D RS encoding, `k` chunks are expanded to `2k^2` chunks. To hide one of the chunks, they need to make `k+1` chunks unavailable.
+
+- For 2D RS encoding, `k` chunks are expanded to `(2k)^2` chunks. To hide one of the chunks, they need to make `(k+1)^2` chunks unavailable.
+
+It is evident that in terms of security, the 1.5D scheme is the least desirable, while the 2D scheme has the highest storage requirements.
+
+## Existing problems
+
+In blockchain, Erasure Code (EC) currently faces challenges related to storage overhead, computational overhead, and data availability.
+
+- **Storage Overhead**: EC requires additional redundant encoding chunks to achieve data fault tolerance and recovery capabilities, which increases storage overhead. This is particularly significant in blockchain, where the cost of on-chain storage is high.
+
+- **Computational Overhead**: The encoding and decoding processes in EC involve complex mathematical calculations, which can result in high computational overhead. In blockchain, where computational resources are limited, it is important to consider ways to reduce computational overhead and improve efficiency.
+
+- **Data Availability**: While EC can provide data fault tolerance, ensuring data availability requires further improvements. For example, how to ensure that the data on a block is written by the block producer and how to ensure that the block producer correctly uses erasure code are important considerations. These topics require further research and exploration.
+
+## Outros
+
+In the field of blockchain, data availability is a crucial consideration. Ensuring that data on the blockchain is accessible and verifiable by all nodes is a key factor in building a trustworthy and secure system. Erasure Code (EC), as an effective data redundancy and fault tolerance technique, is widely employed to address the challenges of data availability in blockchain.

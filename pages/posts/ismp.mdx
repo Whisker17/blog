@@ -1,0 +1,155 @@
+---
+slug: ismp
+title: Interoperable State Machine Protocol Deep Dive
+date: 2023-06-06
+description: The article explains how the Interoperable State Machine Protocol (ISMP) aims to improve Polkadot's cross-chain communication by offloading message routing from the relay chain through a HTTP-like protocol with state proofs, utilizing components like Merkle mountain range tries and various protocol roles (Host, Router, Modules, Dispatcher, and Consensus Client) to enable trustless parachain communication without relying on the relay chain.
+tags: [interoperability, polkadot, substrate]
+---
+
+import { CustomHint } from "../../components/CustomHint";
+
+Polkadot, as a Layer 0 with a multi-chain universe as its core requirement, has a powerful relay chain that helps many parachains to complete finality and also provides cross-chain communication protocols such as HRMP/XCMP. Still, the relay chain was initially designed to perform the task of enforcing the validity of state transitions in parachains. We need to keep the load on the relay chain as low as possible. But currently, the relay chain also carries the function of helping to route messages between parachains, so a solution to decouple this function from the relay chain is urgently needed.
+
+## ISMP Introduction
+
+In simple terms, ISMP wants to free the function of message routing from the relay chain through state proofs, so the protocol is designed to be similar to an HTTP handshake-style communication protocol, and also adapts two different kinds of requests, POST and GET, for data updates and queries, which we store in the corresponding state trie for subsequent proof and processing. This way communication between parachains will no longer require channels to be opened and adapted to each other.
+
+The state trie is a constantly updated infinitely expanding tree, while the traditional Merkle tree is very inefficient to compute in this case, requiring constant recalculation of all nodes, ISMP proposes a new data structure, called **Merkle mountain range Trie**, a perfectly balanced Merkle tree composed of Merkle trees, sharing this cost by incrementally growing subtrees and merging them at the same height, instead of growing the whole tree, which leads to smaller proofs and lower insertion complexity.
+
+![](/images/blog/ismp-1.png)
+
+<CustomHint>
+  If you would like to know more about the MMR Tree, please click on this
+  [link](https://research.polytope.technology/merkle-mountain-range-multi-proofs).
+</CustomHint>
+
+## Protocol components
+
+Throughout the protocol, we have set up several different roles to fulfill different functions, each dividing up the work to complete cross-chain communication.
+
+### Host
+
+As the state machine carrier in the protocol, it acts as a core component that links a large number of other components and the associated stored state trees. We, therefore, need to provide a means of querying and updating a range of relevant information. In simple terms, a host needs to be linked to the relevant router, state machine, consensus client, and their state recorded.
+
+- For state machines, as updates to the state need to be bound to timestamps, we need to store a structure for the height of the state machine and the commitment of its current state.
+
+- The consensus client's information we need to focus on is the latest consensus timestamp, so a structure of id and timestamp is stored.
+
+- For all received or to be sent out response and request receipt and request commitment is stored, support query and update.
+
+  ![](/images/blog/ismp-2.png)
+
+As for the state machine and consensus client, they also have their own state settings. The consensus client has an expiry date and a challenge period, and we need to maintain its state based on the information in storage, while the state machine and consensus client can also be frozen. We need to verify these two components before processing any messages to ensure that they have not expired or been frozen and that the consensus client is not in the challenge period, and only after these checks are passed can message processing proceed.
+
+```rust
+fn validate_state_machine<H>(
+    host: &H,
+    proof_height: StateMachineHeight,
+) -> Result<Box<dyn StateMachineClient>, Error>
+where
+    H: IsmpHost,
+{
+    // Ensure consensus client is not frozen
+    let consensus_client_id = proof_height.id.consensus_client;
+    let consensus_client = host.consensus_client(consensus_client_id)?;
+    // Ensure client is not frozen
+    host.is_consensus_client_frozen(consensus_client_id)?;
+
+    // Ensure state machine is not frozen
+    host.is_state_machine_frozen(proof_height)?;
+
+    // Ensure delay period has elapsed
+    if !verify_delay_passed(host, proof_height)? {
+        return Err(Error::ChallengePeriodNotElapsed {
+            consensus_id: consensus_client_id,
+            current_time: host.timestamp(),
+            update_time: host.consensus_update_time(proof_height.id.consensus_client)?,
+        })
+    }
+
+    consensus_client.state_machine(proof_height.id.state_id)
+
+}
+```
+
+### Router
+
+Router provides a message handler routing function that forwards all requests and responses to the relevant modules.
+
+### Modules
+
+This is the component that initiates the requests and receives the responses, typically a contract or a pallet in a substrate, and we need to set a unique id in the runtime and implement a specific interface to complete the adaptation to the router.
+
+### Dispatcher
+
+It provides a public interface for modules to create requests and responses and is the entry point for modules to interact with the protocol. Messages are distributed via `dispatch_request` and `dispatch_response`. During the dispatch process, the commitment of all outgoing requests and responses needs to be stored in the status trie of the host.
+
+![](/images/blog/ismp-3.png)
+
+### Consensus Client
+
+The consensus client implements parts of the full client, it only needs to verify the consensus proof to determine the network specification, on top of which the messaging mechanism is built. **In short, it is a light client implementation, with a certain challenge period window set to be able to interoperate with other blockchains in a trustless manner.**
+
+We construct an `intermediateState` structure to present the commitment of the global state trie at a particular height.
+
+Also, since there is a challenge period, we need to implement the `freeze` operation and the verification of `FraudProof` during the challenge period:
+
+```rust
+pub trait ConsensusClient {
+    fn verify_consensus(
+        &self,
+        host: &dyn IsmpHost,
+        trusted_consensus_state: Vec<u8>,
+        proof: Vec<u8>,
+    ) -> Result<(Vec<u8>, BTreeMap<StateMachine, StateCommitmentHeight>), Error>;
+
+    fn verify_fraud_proof(
+        &self,
+        host: &dyn IsmpHost,
+        trusted_consensus_state: Vec<u8>,
+        proof_1: Vec<u8>,
+        proof_2: Vec<u8>,
+    ) -> Result<(), Error>;
+
+    fn unbonding_period(&self) -> Duration;
+
+    fn state_machine(&self, id: StateMachine) -> Result<Box<dyn StateMachineClient>, Error>;
+
+}
+```
+
+### Message Mechanism
+
+As with HTTP, the ISMP protocol supports POST and GET as well as the associated TIMEOUT mechanism, and we also need to handle consensus client related messages such as status updates, freeze(FraudProof), and so on. It also supports the batch sending of messages.
+
+For POST and GET, there are some differences in the design process due to their different roles. POST needs to carry some data after encoding, which will then be decoded in the module of the target chain, while GET needs to carry storage keys and height, which are used to specify the height of the state machine to be read in order to obtain the desired data through key-value pair queries.
+
+For Timeout messages, we also need to handle them according to the different request methods. For example, for POST messages, we need to provide a batch of requests in addition to the **Non-membership batch proof** for these requests, whereas for GET we do not need:
+
+```rust
+pub enum TimeoutMessage {
+    Post {
+        requests: Vec<Request>,
+        timeout_proof: Proof,
+    },
+    Get {
+        requests: Vec<Request>,
+    },
+}
+```
+
+This is because Post request timeouts are evaluated relative to the timestamp of the target chain, to prevent malicious peers from submitting timeouts for requests that have already been successfully executed on the target. The timeout for Get requests is evaluated relative to the timestamp of the original chain and does not need to be proven because the Get request is never passed to the other chain and is processed by the relevant party on the off-chain.
+
+## ISMP Workflow in Substrate
+
+Let us take the example of an asset transfer between parachains:
+
+1. The `transfer` function is called in the original state machine, where we construct the relevant `DispatchPost` structure and send the request using `dispatch_request` in a dispatcher instance, then we call the `burn_from` function in the `Mutate` trait to burn the assets in the original chain, and finally publish a `BalanceTransferred` event
+
+2. This publish event is stored in the MMR maintained by the State trie on parachain A. The header of parachain A also contains the root of this MMR structure.
+
+3. After observing that the header of parachain A has been finalized and entered into the relay chain state tree, the user (wallet) can provide the Merkle proof of the header of parachain A in the relay chain state tree, and parachain B can use its access rights to verify that header to the latest relay chain state root. Next, they present the MMR proof of the previous request initiated on parachain A. After verifying this MMR proof, parachain B can "execute" the request. In this case, the `mint_into` function in `Mutate` trait is used to mint the equivalent asset destroyed on parachain A.
+
+## Outros
+
+ISMP-based parachains will support de-relay-chain communication, while also guaranteeing the same level of security and trustlessness so that we can free up a lot of information routing from the relay chain, provide guarantees for relay chain throughput expansion, optimize blockspace, and no longer need to rely on the relay-chain for inefficient routing, which I believe will be a big step in the evolution of interoperability of a multi-chain universe!

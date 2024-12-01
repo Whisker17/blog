@@ -1,0 +1,77 @@
+---
+slug: x-chain-domain
+title: Building a Cross-Chain Domain System with XCM
+date: 2024-02-01
+description: This article discusses how to build a unified cross-chain domain name system using Polkadot's XCM (Cross-Chain Messaging) protocol, exploring various approaches to handle domain transfers, namespace maintenance, and data consistency across multiple chains while highlighting the challenges and potential solutions in implementing such a system.
+tags: [interoperability, polkadot, substrate]
+---
+
+On-chain domain systems provide a simple and practical feature, bringing back the user experience of Web2 and enhancing it with security features. However, the challenge lies in how to build a unified domain system that spans across different chains. Polkadot, aiming for seamless cross-chain interoperability, introduces XCM, a cross-chain communication standard. This standard unifies cross-chain communication, addressing a crucial technical prerequisite for a unified domain system.
+
+## Domain System Prototype
+
+Let's first understand how a basic on-chain domain system is designed. Typically, a simple domain system needs to include:
+
+1. Bidirectional conversion between addresses and domain names.
+
+2. Ownership transfer of domains.
+
+3. Maintenance of metadata as additional information for domains (including various social handles).
+
+These functionalities can be implemented through a contract called `Registry`. Users/developers can interact with it through the front end, indexer, or contract to perform corresponding function routes.
+
+## Cross-Chain Domain System Prototype
+
+Building on the basic functionalities of a domain system explained earlier, how can we construct a cross-chain domain system?
+
+### Domain as an Asset
+
+Currently, XCM supports two different asset transfer methods:
+
+1. **Asset teleportation**: A straightforward process of cross-chain asset destruction and minting, requiring a high level of trust between the asset's source and destination.
+
+2. **Reserve-backed transfers**: A solution using a third party as a reserve for assets, eliminating the trust assumption of the first method.
+
+However, both asset transfer methods presuppose the transfer of assets. For domains, that are not native assets, and considering the absence of protocols/standards allowing assets to be defined in a smart contract environment, transferring domains becomes a challenge.
+
+#### Potential Solutions:
+
+The simplest solution is to leverage parallel chains like [Moonbeam](https://docs.moonbeam.network/builders/interoperability/xcm/xc-registration/assets/) or [Astar](https://docs.astar.network/docs/learn/xcm/building-with-xcm/create-xc20-assets) that provide asset-creation schemes. This allows NFTs in the domain system to use the two already implemented asset transfer methods for transfer.
+
+An alternative solution is to use XCM's `Transact` instruction to implement custom teleportation/reserve-transfer forms and install adapters supporting this on the chains. This approach avoids limitations on channel support between parallel chains, requiring the deployment of smart contracts on any two chains.
+
+## Integration with XCM
+
+Once we solve the issue of the on-chain existence of domains, we can leverage XCM for cross-chain calls. We need to identify which potential calls might require cross-chain support:
+
+1. Domain and address resolution.
+
+2. Domain transfer.
+
+3. Maintenance and updates of metadata.
+
+### Challenges and Potential Solutions
+
+Building a cross-chain unified domain system poses several technical challenges:
+
+#### Namespace Maintenance Across Multiple Chains
+
+In a multi-chain system, ensuring the sovereignty and functionality of all chains is crucial. Consistency in the namespace of domains becomes a key design focus. Depending on different scenarios, various designs may be necessary.
+
+##### Solution:
+
+If the maintenance of the namespace across multiple chains is handled by an upper-level host chain, it implies that data between multiple chains will flow through this host chain, effectively addressing the uniqueness maintenance of the namespace. However, in the absence of such a host chain, the entire domain system needs to be mindful of domain collision scenarios, which can be mitigated using methods like bloom filters. The decision to use a host chain and where to implement host chain functionality is a pivotal issue. Ideally, modifying the relay chain to support this functionality would align with the vision of a native-domain system.
+
+#### Domain Data Maintenance Across Multiple Chains
+
+Maintaining metadata, such as social handles, is essential in a domain system. The challenge is how to update this data across the multi-chain universe.
+
+##### Solutions:
+
+Similar to namespace maintenance, using a host chain is the simplest solution. Another approach is using XCM's "Transact" instruction to implement custom teleportation/reserve-transfer forms and install adapters. This way, domain data updates are not constrained by channel openings and smart contracts can be deployed on any two chains.
+
+## Impact on the DOTSAMA Ecosystem
+
+For the domain name system, besides the most basic DID service (i.e. replacing a long list of irregular addresses), it is also crucial to extend its functions.
+
+For a Unified Domain Name System that supports cross-chaining, XCM provides a convenient and efficient solution for cross-chaining operations and optimizes the functions of XCM by replacing domain names. For example, MultiLocation in XCM, which originally needs to define the receiving address of an asset in the form of a relative address, if the domain name system is introduced, the final form may be something like `Alice.astar.xcm`, which greatly reduces the development cost of XCM, and developers no longer need to analyze the complex relationship between parallel chains, and furthermore. For a unified domain name system, the final form would be something like `Alice.xcm`, which would not even require subdomains to identify destinations.

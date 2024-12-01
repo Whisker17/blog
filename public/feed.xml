@@ -4,15 +4,8 @@
         <description><![CDATA[Whisker's Blog - Learn all about blockchain, cryptography and more!]]></description>
         <link>https://whisker17.vercel.app/</link>
         <generator>RSS for Node</generator>
-        <lastBuildDate>Sat, 30 Nov 2024 08:13:58 GMT</lastBuildDate>
+        <lastBuildDate>Sun, 01 Dec 2024 10:54:56 GMT</lastBuildDate>
         <atom:link href="https://whisker17.vercel.app/feed.xml" rel="self" type="application/rss+xml"/>
-        <item>
-            <title><![CDATA[The Power of Meta Transactions (Written by Notion AI)]]></title>
-            <description><![CDATA[Meta transactions enable users to interact with blockchain applications without directly paying gas fees by utilizing relayers, making blockchain more accessible while discussing their benefits in gaming, finance, and identity management, along with their current limitations.]]></description>
-            <link>/posts/metatx-ai</link>
-            <guid isPermaLink="true">/posts/metatx-ai</guid>
-            <pubDate>Mon, 01 May 2023 00:00:00 GMT</pubDate>
-        </item>
         <item>
             <title><![CDATA[ERC-4337 - From Zero To Hero]]></title>
             <description><![CDATA[ERC-4337 introduces Account Abstraction through a system of smart contract wallets, bundlers, paymasters, and aggregators, evolving from basic EOA+CA model to a comprehensive solution that enables more flexible transaction handling and better user experience on Ethereum.]]></description>
@@ -21,11 +14,11 @@
             <pubDate>Mon, 01 May 2023 00:00:00 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[A Deep Dive into Cannon]]></title>
-            <description><![CDATA[This blog explores how Cannons work in the op stack, which is a fraud proof system designed by Optimism.]]></description>
-            <link>/posts/cannon-deep-dive</link>
-            <guid isPermaLink="true">/posts/cannon-deep-dive</guid>
-            <pubDate>Sun, 28 Jan 2024 13:28:19 GMT</pubDate>
+            <title><![CDATA[Celestia Deep Dives]]></title>
+            <description><![CDATA[The article provides a detailed technical analysis of Celestia, a modular blockchain project built on Cosmos SDK that focuses on solving data availability challenges through innovative features like 2D Reed-Solomon Encoding, Namespace Merkle Trees, and a dual-network architecture consisting of Consensus and Data Availability networks, while also discussing its current limitations and challenges.]]></description>
+            <link>/posts/celestia</link>
+            <guid isPermaLink="true">/posts/celestia</guid>
+            <pubDate>Fri, 02 Jun 2023 00:00:00 GMT</pubDate>
         </item>
         <item>
             <title><![CDATA[Batch calls in Substrate]]></title>
@@ -35,25 +28,46 @@
             <pubDate>Tue, 18 Apr 2023 00:00:00 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[A Strong Account in Substrate - Proxy Account]]></title>
-            <description><![CDATA[The article provides a comprehensive overview of Substrate's Proxy Account functionality, explaining how account security can be enhanced by splitting account functionalities into different proxy accounts with varying permissions]]></description>
-            <link>/posts/proxy-pallet</link>
-            <guid isPermaLink="true">/posts/proxy-pallet</guid>
-            <pubDate>Thu, 13 Apr 2023 00:00:00 GMT</pubDate>
+            <title><![CDATA[A Deep Dive into Cannon]]></title>
+            <description><![CDATA[This blog explores how Cannons work in the op stack, which is a fraud proof system designed by Optimism.]]></description>
+            <link>/posts/cannon-deep-dive</link>
+            <guid isPermaLink="true">/posts/cannon-deep-dive</guid>
+            <pubDate>Sun, 28 Jan 2024 13:28:19 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[A Deep Dive into Kroma's ZK Fraud Proof Design]]></title>
-            <description><![CDATA[This blog explores how Kroma implement a zk fraud proof system.]]></description>
-            <link>/posts/kroma</link>
-            <guid isPermaLink="true">/posts/kroma</guid>
-            <pubDate>Tue, 06 Feb 2024 00:00:00 GMT</pubDate>
+            <title><![CDATA[Erasure Code Deep Dive]]></title>
+            <description><![CDATA[This article explains how Erasure Code works as a data redundancy technique in blockchain systems, exploring its mathematical principles (including checksum redundancy and Reed-Solomon Code), different encoding dimensions, and current challenges in providing efficient data availability and fault tolerance compared to traditional backup methods.]]></description>
+            <link>/posts/ec</link>
+            <guid isPermaLink="true">/posts/ec</guid>
+            <pubDate>Mon, 17 Jul 2023 00:00:00 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[MultiSig in Substrate]]></title>
-            <description><![CDATA[This blog explores how MultiSig works in Substrate.]]></description>
-            <link>/posts/multisig-in-substrate</link>
-            <guid isPermaLink="true">/posts/multisig-in-substrate</guid>
-            <pubDate>Mon, 03 Apr 2023 00:00:00 GMT</pubDate>
+            <title><![CDATA[Interoperable State Machine Protocol Deep Dive]]></title>
+            <description><![CDATA[The article explains how the Interoperable State Machine Protocol (ISMP) aims to improve Polkadot's cross-chain communication by offloading message routing from the relay chain through a HTTP-like protocol with state proofs, utilizing components like Merkle mountain range tries and various protocol roles (Host, Router, Modules, Dispatcher, and Consensus Client) to enable trustless parachain communication without relying on the relay chain.]]></description>
+            <link>/posts/ismp</link>
+            <guid isPermaLink="true">/posts/ismp</guid>
+            <pubDate>Tue, 06 Jun 2023 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[Introduction to Data Availability]]></title>
+            <description><![CDATA[The article explains data availability (DA) in blockchain systems, focusing on two main solutions - Data Availability Sampling (DAS) using Erasure Code and Data Availability Committee (DAC) - while discussing their implementations, comparative advantages, limitations, and critical importance for blockchain security and scalability.]]></description>
+            <link>/posts/da</link>
+            <guid isPermaLink="true">/posts/da</guid>
+            <pubDate>Fri, 19 May 2023 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[Jibber-Jabber On Meta Transactions]]></title>
+            <description><![CDATA[The article provides a comprehensive overview of meta transactions in Ethereum, explaining how they allow users to interact with the blockchain without directly paying gas fees by using relayers and various implementations like ERC-2612, ERC-2770/2771, and GSN, while also discussing their current limitations and challenges.]]></description>
+            <link>/posts/metatx</link>
+            <guid isPermaLink="true">/posts/metatx</guid>
+            <pubDate>Mon, 01 May 2023 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[Introduction to Light clients]]></title>
+            <description><![CDATA[The article explains light clients as resource-efficient alternatives to full nodes in blockchain networks, discussing their implementation across different consensus mechanisms (PoW, PoS, BFT), their potential to replace RPC services, and current challenges while highlighting their importance for network accessibility and decentralization.]]></description>
+            <link>/posts/light-client</link>
+            <guid isPermaLink="true">/posts/light-client</guid>
+            <pubDate>Tue, 16 May 2023 00:00:00 GMT</pubDate>
         </item>
         <item>
             <title><![CDATA[Fraud Proof in OP Stack]]></title>
@@ -63,25 +77,32 @@
             <pubDate>Sat, 27 Jan 2024 13:28:19 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[A Deep Dive into RIP-7560]]></title>
-            <description><![CDATA[This blog explores how RIP-7560 works, which is a native Account Abstraction proposal in Ethereum ecosystem.]]></description>
-            <link>/posts/rip-7560</link>
-            <guid isPermaLink="true">/posts/rip-7560</guid>
-            <pubDate>Mon, 05 Feb 2024 00:00:00 GMT</pubDate>
+            <title><![CDATA[A Deep Dive into Kroma's ZK Fraud Proof Design]]></title>
+            <description><![CDATA[This blog explores how Kroma implement a zk fraud proof system.]]></description>
+            <link>/posts/kroma</link>
+            <guid isPermaLink="true">/posts/kroma</guid>
+            <pubDate>Tue, 06 Feb 2024 00:00:00 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[How to Provide Shared Security for Multiple Chains]]></title>
-            <description><![CDATA[The article compares different approaches to providing shared security across multiple chains, focusing on how Polkadot's parachain design and Cosmos' Interchain Security tackle this challenge, while also briefly discussing Ethereum's Rollup solutions for context.]]></description>
-            <link>/posts/shared-security</link>
-            <guid isPermaLink="true">/posts/shared-security</guid>
-            <pubDate>Fri, 28 Apr 2023 00:00:00 GMT</pubDate>
+            <title><![CDATA[The Power of Meta Transactions (Written by Notion AI)]]></title>
+            <description><![CDATA[Meta transactions enable users to interact with blockchain applications without directly paying gas fees by utilizing relayers, making blockchain more accessible while discussing their benefits in gaming, finance, and identity management, along with their current limitations.]]></description>
+            <link>/posts/metatx-ai</link>
+            <guid isPermaLink="true">/posts/metatx-ai</guid>
+            <pubDate>Mon, 01 May 2023 00:00:00 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[How to make our wallets more user-friendly]]></title>
-            <description><![CDATA[The article explains Substrate's Session Keys functionality, which improves wallet user experience and security by allowing users to set temporary hot keys for specific operations, eliminating the need for frequent password input.]]></description>
-            <link>/posts/session-keys</link>
-            <guid isPermaLink="true">/posts/session-keys</guid>
-            <pubDate>Mon, 17 Apr 2023 00:00:00 GMT</pubDate>
+            <title><![CDATA[MultiLocation and MultiAsset Deep Dive]]></title>
+            <description><![CDATA[This article provides a comprehensive technical deep dive into Substrate's MultiLocation and MultiAsset data structures, which are fundamental components of XCM (Cross-Chain Message Passing) protocol that enable precise identification of locations and assets in cross-chain transactions within the Polkadot ecosystem.]]></description>
+            <link>/posts/multilocation-and-multiassets</link>
+            <guid isPermaLink="true">/posts/multilocation-and-multiassets</guid>
+            <pubDate>Wed, 28 Jun 2023 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[MultiSig in Substrate]]></title>
+            <description><![CDATA[This blog explores how MultiSig works in Substrate.]]></description>
+            <link>/posts/multisig-in-substrate</link>
+            <guid isPermaLink="true">/posts/multisig-in-substrate</guid>
+            <pubDate>Mon, 03 Apr 2023 00:00:00 GMT</pubDate>
         </item>
         <item>
             <title><![CDATA[Shamir Secret Share Intros]]></title>
@@ -91,11 +112,46 @@
             <pubDate>Sat, 29 Apr 2023 00:00:00 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[Social Recovery in Substrate]]></title>
-            <description><![CDATA[The article explains Substrate's Social Recovery functionality, which allows users to regain access to their lost accounts through a system of pre-designated trusted friends who must reach a threshold consensus, enhancing wallet security and user experience while maintaining safeguards against malicious recovery attempts.]]></description>
-            <link>/posts/social-recovery</link>
-            <guid isPermaLink="true">/posts/social-recovery</guid>
-            <pubDate>Mon, 24 Apr 2023 00:00:00 GMT</pubDate>
+            <title><![CDATA[A Deep Dive into RIP-7560]]></title>
+            <description><![CDATA[This blog explores how RIP-7560 works, which is a native Account Abstraction proposal in Ethereum ecosystem.]]></description>
+            <link>/posts/rip-7560</link>
+            <guid isPermaLink="true">/posts/rip-7560</guid>
+            <pubDate>Mon, 05 Feb 2024 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[A Strong Account in Substrate - Proxy Account]]></title>
+            <description><![CDATA[The article provides a comprehensive overview of Substrate's Proxy Account functionality, explaining how account security can be enhanced by splitting account functionalities into different proxy accounts with varying permissions]]></description>
+            <link>/posts/proxy-pallet</link>
+            <guid isPermaLink="true">/posts/proxy-pallet</guid>
+            <pubDate>Thu, 13 Apr 2023 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[Building a Cross-Chain Domain System with XCM]]></title>
+            <description><![CDATA[This article discusses how to build a unified cross-chain domain name system using Polkadot's XCM (Cross-Chain Messaging) protocol, exploring various approaches to handle domain transfers, namespace maintenance, and data consistency across multiple chains while highlighting the challenges and potential solutions in implementing such a system.]]></description>
+            <link>/posts/x-chain-domain</link>
+            <guid isPermaLink="true">/posts/x-chain-domain</guid>
+            <pubDate>Thu, 01 Feb 2024 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[How to make our wallets more user-friendly]]></title>
+            <description><![CDATA[The article explains Substrate's Session Keys functionality, which improves wallet user experience and security by allowing users to set temporary hot keys for specific operations, eliminating the need for frequent password input.]]></description>
+            <link>/posts/session-keys</link>
+            <guid isPermaLink="true">/posts/session-keys</guid>
+            <pubDate>Mon, 17 Apr 2023 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[How to Provide Shared Security for Multiple Chains]]></title>
+            <description><![CDATA[The article compares different approaches to providing shared security across multiple chains, focusing on how Polkadot's parachain design and Cosmos' Interchain Security tackle this challenge, while also briefly discussing Ethereum's Rollup solutions for context.]]></description>
+            <link>/posts/shared-security</link>
+            <guid isPermaLink="true">/posts/shared-security</guid>
+            <pubDate>Fri, 28 Apr 2023 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[How to Develop ZK Fraud Proof with RISC0]]></title>
+            <description><![CDATA[This blog explores how to use Risc0 to build a zk fraud proof system.]]></description>
+            <link>/posts/zk-fraud-proof-by-using-risc0</link>
+            <guid isPermaLink="true">/posts/zk-fraud-proof-by-using-risc0</guid>
+            <pubDate>Mon, 29 Jan 2024 13:28:19 GMT</pubDate>
         </item>
         <item>
             <title><![CDATA[How a Robust Account System Should Be Designed]]></title>
@@ -105,11 +161,11 @@
             <pubDate>Tue, 25 Apr 2023 00:00:00 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[How to Develop ZK Fraud Proof with RISC0]]></title>
-            <description><![CDATA[This blog explores how to use Risc0 to build a zk fraud proof system.]]></description>
-            <link>/posts/zk-fraud-proof-by-using-risc0</link>
-            <guid isPermaLink="true">/posts/zk-fraud-proof-by-using-risc0</guid>
-            <pubDate>Mon, 29 Jan 2024 13:28:19 GMT</pubDate>
+            <title><![CDATA[Social Recovery in Substrate]]></title>
+            <description><![CDATA[The article explains Substrate's Social Recovery functionality, which allows users to regain access to their lost accounts through a system of pre-designated trusted friends who must reach a threshold consensus, enhancing wallet security and user experience while maintaining safeguards against malicious recovery attempts.]]></description>
+            <link>/posts/social-recovery</link>
+            <guid isPermaLink="true">/posts/social-recovery</guid>
+            <pubDate>Mon, 24 Apr 2023 00:00:00 GMT</pubDate>
         </item>
     </channel>
 </rss>

@@ -1,0 +1,85 @@
+---
+slug: da
+title: Introduction to Data Availability
+date: 2023-05-19
+description: The article explains data availability (DA) in blockchain systems, focusing on two main solutions - Data Availability Sampling (DAS) using Erasure Code and Data Availability Committee (DAC) - while discussing their implementations, comparative advantages, limitations, and critical importance for blockchain security and scalability.
+tags: [da, infra]
+---
+
+In a typical blockchain architecture, there are usually three layers:
+
+- **Data availability layer**: records transaction data and provides the order in which transactions occurred.
+
+- **Execution layer**: runs/handles each transaction that has occurred from the start of the chain to ensure that the state is always correct.
+
+- **Settlement layer**: finalizes transactions and provides security for all chains settling into it.
+
+Generally, the settlement layer is where transactions are ultimately confirmed, such as Ethereum's L1, while various L2 Rollups can specialize in handling the execution part. So how can we ensure the crucial data availability? As a Permissionless design, the DA layer must provide a mechanism for the Execution and Settlement layers to check whether the transaction data is indeed available in the most minimal trust manner possible. This is the foundation of the entire blockchain at its lowest level, so how can we handle it?
+
+## What Are Data Availability and DA Problems?
+
+As we know, a robust network will have many nodes that provide all the transactions on the chain and reach a consensus to form a final state. Nodes in the network perform different roles, including full nodes that consume significant computing power and storage space (with all transaction data), lightweight clients that inherit security from full nodes, and consensus nodes responsible for reaching consensus. So how can nodes determine whether all the data in a new block has actually been published to the network when generating a new block?
+
+Of course, we can choose to download and verify all transaction data in the new block, but this will significantly increase the load on the nodes, making this solution unacceptable. The solution to the data availability problem aims to provide sufficient assurance to network participants who do not download and store data themselves, that is, complete transaction data is available for verification.
+
+## Current solutions for DA
+
+### Data Availability Sampling
+
+Data availability sampling is a mechanism by which nodes can verify the availability of data without downloading all the data of a block. Each node (including non-collateralized nodes) downloads some small subset of the total data chosen at random so that there is no excessive load on individual nodes, and we rely on some Erasure Code methods such as Reed-Solomon encoding to extend the data set with redundant information to gain resilience.
+
+#### Erasure Code
+
+If we want to improve the reliability of our data when storing a copy, the most straightforward and simple way is to store multiple copies of a single piece of data, but this wastes some storage space, **while Erasure code can achieve the same high reliability at a fraction of the cost of storing multiple copies**. How is this achieved? Let's take a brief look at the principle of EC with some examples:
+
+- If we want to solve the k+1 redundancy strategy, i.e., to satisfy the recoverability of k numbers with k+1 numbers, we can do it by a simple summation redundancy. Suppose the k numbers are: $$d_1, d_2, d_3 ... d_k$$ ; then store a $$y = d_1 + d_2 + d_3$$ and that's it.
+
+- Similarly, if we want to solve the redundancy strategy for k+2, we can do it by multiplying the summation exponentially, i.e., when computing y₁, multiply each number by 1, 1, 1, 1 ...; when computing $$y_2$$, multiply each number by 1, 2, 4, 8 ..., i.e., $$y_1 = d_1 + d_2 + d_3 + ... + d_k , y2 = d_1 + 2d_2 + 4d_3 + ... + d_k , y2 = d_1 + 2d_2 + 4d_3 + ... + 2^(k-1)d_k$$
+
+- Then we extend the redundancy strategy to k+m, if there are k blocks of data, we take k data as coefficients to define a higher order curve about x, and then we achieve redundancy by recording the coordinates of the points on the curve: $$y_i = d_1 + d_2x + d_3x^2 + ... + d_kx^(k-1)$$ , and finally, we solve it by means of the Vandermonde matrix.
+
+The mathematical principle is very simple: **a k-1th curve can be determined by k coefficients or points on the curve.**
+
+The process of generating check blocks by EC is called EC encoding, which means multiplying all the data blocks by the Vandermonde matrix. When the data is lost and needs to be recovered, the decoding process of EC is used.
+
+#### Implementation details
+
+EC's approach is very simple and elegant but is based on a very strong premise: **block producers don't do evil in the course of erasure code.** So is there any way we can ensure this premise? How do we ensure that the data in the block is written by the block producer?
+
+If we want to guarantee the validity of the data, it is very simple: we can have the block producer issue a vector commitment to the content after the block is constructed, and the validity of the EC process can be guaranteed in a number of ways:
+
+- Using **Fraud Proofs**. A number of sampling nodes sample a large number of blocks to find inconsistencies in the encoding of some blocks so that it can propose a coding fraud-proof and mark the block as invalid, but this requires a very powerful sampling node. Also, we can use, for example, 2D-Reed-Solomon encoding to reduce the number of blocks that have to be sampled during the sampling process.
+
+- Use **Validity proofs**. Use cryptographic proofs to prove correct erasure-encoding of the vector-commitment-committed coded chunks
+
+- Using **Polynomial commitments**. Polynomial commitments allow direct validation of EC-encoded blocks of information based on commitments to unencoded blocks of information, so there is no room for invalid encoding.
+
+### Data Availability Committee
+
+The committee is the trusted party that provides or certifies data availability, and we do this by setting a percentage threshold, and we accept a blob only if more than that number of people agree. in the DAC scheme, instead of publishing transaction data on the base layer, the block producer sends the block to the DAC for off-chain storage.
+
+Depending on the degree of decentralization of the DAC, we can divide it into two different schemes, trusted and permissionless:
+
+- In the trusted DAC scheme, data availability managers are known in advance and appointed to their roles.
+
+- A de-trusted DAC is permissionless - nodes can join the protocol and participate in the off-chain data storage without the approval of the authority. We also need to refine its security with some financial incentives, while data availability managers need to provide a bond as a guarantee of honest behavior as a penalty for malicious behavior.
+
+### Solution Comparison
+
+We have briefly described two of the current mainstream DA solutions, both of which have their own advantages and limitations:
+
+- DAS will have higher latency compared to Committee due to a large number of matrix calculations required
+
+- DAS has more edge cases, which Committee can help solve
+
+- DAS is easier to perform quantum proofs than Committee (which requires post-quantum aggregation signatures)
+
+- The percentage threshold for the committee's approval blob is a parameter that needs to be set artificially, and how to set it will be a very big problem.
+
+- In the committee scheme, the 51% attack can do more than just restore transactions or censorship; it can also construct invalid blocks.
+
+- In the committee scheme, there is another long-standing problem, the **Fisherman problem**, which simply means that if a node finds that some data in a block is unavailable or the block producer deliberately hides part of the data, it broadcasts it to other peers to notify the situation. But then the block producer restores the data to make the block valid, and other nodes will not be able to tell whether the block producer is doing evil or the node that issued the fraud-proof is doing evil.
+
+## Summary
+
+Data availability is critical to the security of any blockchain, as it ensures that anyone can inspect the transaction ledger and verify it. Also, data availability is a key difficulty when scaling a blockchain. As blocks get larger, it becomes impractical for the average user to download all the data, so users can no longer validate the chain. The DA issue will further become a hot topic for discussion as blockchain scaling needs.

@@ -1,0 +1,65 @@
+---
+slug: light-client
+title: Introduction to Light clients
+date: 2023-05-16
+description: The article explains light clients as resource-efficient alternatives to full nodes in blockchain networks, discussing their implementation across different consensus mechanisms (PoW, PoS, BFT), their potential to replace RPC services, and current challenges while highlighting their importance for network accessibility and decentralization.
+tags: [consensus, infra]
+---
+
+In the blockchain, there are different node roles to maintain the network, which are categorized based on their contribution to the network:
+
+- **Validator/Consensus Nodes** - They collect transactions from the memory pool, execute them, and generate a candidate block attached to the network. The block contains a small header with digests and metadata of transactions in the block. These validator nodes can be considered full nodes with stakes, meaning they can participate in the network.
+
+- **Full Nodes** - They typically choose to re-execute the transactions included in the blocks to ensure their validity. The difference between full nodes and validator nodes is that full nodes follow the chain state but do not actively participate in the network.
+
+- **Light Clients** - They can replace full nodes for devices with limited resources. These light clients usually only obtain block headers and request transaction details from neighboring full nodes when needed. However, what they do is simply ask the full nodes for their view of the chain state. If a full node decides to lie, the light client still follows along.
+
+Currently, most blockchain services rely on node providers that can offer RPC services in their network. RPC, as a relatively centralized service component in the network, is handled by a few endpoints that process all on-chain operations, serving as an intermediate layer for different protocols. If you want to enjoy the most trustless, private, decentralized, and censorship-resistant way, a full node is your best choice, but at the same time, you also need to bear the hardware requirements that come with these benefits, which is a trade-off.
+
+So what kind of light client do we actually need? The most basic functions of a light client should include:
+
+- **Querying** - It is important to note that querying often requires proof from the client protocol (created by full nodes or validator nodes).
+
+- **Submitting transactions**, which can complete basic wallet functions.
+
+## Light clients implementation
+
+Unlike full nodes, light clients do not need to download all the data of the blockchain. The lightweight cost means they cannot independently perform state verification. They need to request some necessary data through full nodes to keep up with the latest block height. Currently, we configure different combinations of clients based on different service properties and requirements. Specifically, you can choose a light/full execution client and a light/full consensus client.
+
+In Bitcoin, we first implemented the Simplified Payment Verification (SPV) protocol, which is indeed more lightweight compared to a full node client. The SPV light client only verifies the proof-of-work chain by using block headers and requests Merkle proofs from full nodes as needed to verify the validity of certain transactions, such as those related to wallet addresses. However, this is different from the lightweight clients we need, as it cannot support resource-limited environments with very low computational, storage, and communication capabilities, such as mobile or browser-based clients. More importantly, it introduces additional trust assumptions and attack vectors, since in many implementations, all communications and queries are executed through a small number of servers.
+
+## The impact of consensus algorithm on light clients
+
+We have found that a common method for building light clients is to only verify block headers and skip the validation of transactions or account states. However, in specific implementations, we need to handle this differently based on the approach adopted by the blockchain.
+
+In proof-of-work consensus, block header verification is straightforward since the client only needs to verify the block hash value and non-encoded proof-of-work. For stateless blockchains like Bitcoin, native support for lightweight clients is achieved by their indifference towards the historical state of the chain, as they only retain a compressed and verifiable representation of the entire state at any given time. This greatly reduces the cost of bootstrap and sync but also introduces corresponding security risks (consensus handling of forks).
+
+However, additional considerations must be made to maintain security in proof-of-stake or BFT consensus blockchains.
+
+In proof-of-stake, clients typically need to verify the account state and balance throughout the entire history of the blockchain or consider the risk of long-range attacks. In short, clients need to trust that the development of the blockchain consensus throughout its history has been correct and honest and that no malicious majority has appeared.
+
+For BFT-consensus, there is an additional challenge: BFT validators can join and leave, and clients need to verify the evolution of the consensus through the signatures of all validators.
+
+## The significance of Light clients
+
+The ability of light clients to verify incoming data from users is a critical feature, as it eliminates the need to blindly trust that their data providers are correct and honest. By accessing the blockchain in a trust-minimized way with only a small fraction of full node computing resources.
+
+Light clients can replace the functionality of RPC:
+
+- We know that RPC, as a relatively centralized service component in the network, is processed by a small number of EndPoints for all on-chain operations, serving as an intermediate conversion layer between different protocols.
+
+- Both developers and users may have to pay for potential RPC services. If light clients can replace complex RPC services, we can achieve faster developer onboarding
+
+- And further decentralization, which can provide better security for the chain.
+
+## Current problems with Light clients
+
+Light clients need to verify the correctness of block headers they receive without downloading block data. The lightweight nature of this method means that it is not possible to independently verify block headers by re-executing transactions locally as a full node does, so the security of light clients is inherited from the connected full nodes.
+
+Secondly, block headers contain related Merkle roots as validity certificates and light clients need to send relevant operation requests to full nodes. As some simple operations may require multiple requests, the bandwidth requirements for light clients will be higher than those for full nodes, but the required resources and storage capacity are several orders of magnitude lower than those for full nodes.
+
+Since light clients require fewer computational and storage resources than full nodes, most people will choose to use light clients. However, if the number of full nodes continues to decrease, the security and decentralization of the network will also decrease accordingly, which is something we do not want to see.
+
+## Summary
+
+A major challenge for blockchain interoperability is having an efficient and secure on-chain light client protocol. Currently, Polkadot has implemented a full node light version that has faster setup and synchronization times, lower computational/storage requirements, and only stores block headers. It interacts directly with the blockchain network in a peer-to-peer manner and therefore does not introduce extra trust assumptions. However, its lightweight nature is still insufficient to support easy deployment on browsers/mobile devices, which is also a vision for many regarding light clients.

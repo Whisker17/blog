@@ -1,0 +1,195 @@
+---
+slug: multilocation-and-multiassets
+title: MultiLocation and MultiAsset Deep Dive
+date: 2023-06-28
+description: This article provides a comprehensive technical deep dive into Substrate's MultiLocation and MultiAsset data structures, which are fundamental components of XCM (Cross-Chain Message Passing) protocol that enable precise identification of locations and assets in cross-chain transactions within the Polkadot ecosystem.
+tags: [interoperability, polkadot, substrate]
+---
+
+In a multi-chain universe, cross-chain interoperability plays a pivotal role. Substrate tackles this challenge by introducing XCM, a standardized cross-chain message-passing protocol. Through the XCMP protocol, Substrate empowers network-layer functionality, allowing the seamless delivery of XCM-formatted messages to other participating parachains. This article provides an in-depth exploration of building a secure and highly available cross-chain transaction, delving into the low-level aspects and the transaction structure design within Substrate's XCM framework.
+
+## MultiLocation
+
+Accurately describing the origin and destination of assets is of paramount importance in cross-chain transactions. It is essential to establish a clear identification of the transacting parties to ensure consensus and successful completion of the transaction on the blockchain. To address this challenge, the XCM design incorporates a concept called MultiLocation — an abstract data type specifically designed for cross-chain operations. MultiLocation enables the specification of sending and receiving addresses for messages across different chains, facilitating seamless interoperability.
+
+### What Is the Location?
+
+Location refers to an isolated state machine in a consensus system; for example, an account in Ethereum can be identified as a location, and the following information can be identified as a location in XCM:
+
+- A layer-1 blockchain，e.g. the Bitcoin mainnet or a parachain
+
+- A layer-0 superchain，e.g. the Polkadot Relay chain
+
+- A layer-2 smart contract, e.g. an ERC-20 on Ethereum
+
+- A logical functional component of a chain, e.g. a single instance of a pallet on a FRAME-based Substrate chain.
+
+- An account
+
+However, it's crucial to keep in mind that `MultiLocation` **is limited to defining the relative path between two locations and does not encompass a global location.**
+
+### Implementation
+
+```rust
+pub struct MultiLocation {
+	pub parents: u8,
+	pub interior: Junctions,
+}
+```
+
+The structure of `MultiLocation`, as depicted above, highlights the importance of specifying the order of the relative path since `MultiLocation` operates based on a relative path concept. In its design, `MultiLocation` incorporates the `parents` parameter, indicating the number of hops required for a transaction's origin to exit the current consensus system. This design choice underscores that XCM's cross-chain operations rely on vertical information transmission.
+
+Additionally, to ensure clarity regarding the recipient's location, we need to specify the downward process. This is achieved through the use of the second parameter, `interior`, which is an enum structure called `Junctions`. `Junctions` indicates the number of sub-consensus systems the recipient needs to traverse. The structure of `Junctions` is as follows:
+
+```rust
+pub enum Junctions {
+	Here,
+	X1(Junction),
+	X2(Junction, Junction),
+	X3(Junction, Junction, Junction),
+	X4(Junction, Junction, Junction, Junction),
+	X5(Junction, Junction, Junction, Junction, Junction),
+	X6(Junction, Junction, Junction, Junction, Junction, Junction),
+	X7(Junction, Junction, Junction, Junction, Junction, Junction, Junction),
+	X8(Junction, Junction, Junction, Junction, Junction, Junction, Junction, Junction),
+}
+```
+
+The `Junction` represents the item enum of different locations, which can be selected by the developer according to the different destinations, a few of the more commonly used ones are described here:
+
+| **Name**       | **Description**                                                                                                         | **Use Case**                      |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Parachain      | An indexed parachain belonging to and operated by the context.                                                          | Parachains                        |
+| AccountId32    | A 32-byte identifier for an account of a specific network that is respected as a sovereign endpoint within the context. | Parachain accounts                |
+| AccountIndex64 | An 8-byte index for an account of a specific network that is respected as a sovereign endpoint within the context.      | Parachain accounts                |
+| AccountKey20   | A 20-byte identifier for an account of a specific network that is respected as a sovereign endpoint within the context. | Ethereum, Bitcoin, Smart contract |
+| PalletInstance | An instanced, indexed pallet that forms a constituent part of the context.                                              | Pallet in a Frame-based chain     |
+
+### Examples
+
+- Assuming that we need to initiate a transaction from a parachain to the relay chain, an instance of `MultiLocation` should be as follows:
+
+  ```rust
+  MultiLocation {
+      parents: 1,
+      interior: Junctions::Here,
+  }
+  ```
+
+This is because the assets only need to be hopped up once from the parachain to the relay chain, while no longer needing to be positioned downwards.
+
+- Suppose we need to initiate a transaction from a parachain (Moonbeam) to another parachain (Acala), then an instance of `MultiLocation` should be as follows:
+
+  ```rust
+  MultiLocation {
+      parents: 1,
+      interior: Junctions::X1(
+              Junction::Parachain(ParachainId::from(200)),
+      ),
+  }
+  ```
+
+This is because to move from one parachain to another, the asset only needs to be hopped up once and also positioned down once.
+
+- Assuming we need to initiate a transaction from a parachain (Moonbeam) to a Pallet, an instance of `MultiLocation` should be as follows:
+
+  ```rust
+  MultiLocation {
+      parents: 1,
+      interior: Junctions::X2(
+              Junction::Parachain(ParachainId::from(100)),
+              Junction::PalletInstance(1),
+      ),
+  }
+  ```
+
+This is because to go from a parachain to a Pallet, the asset only needs to be hopped up once, while also being positioned down twice (once to the parachain and once to the associated Pallet).
+
+## MultiAsset
+
+In addition to ensuring the precise location of transacting parties, ensuring the determinism of assets is equally important. By designing a general asset representation standard, we can effectively showcase interoperability between different chains, breaking down barriers and effortlessly handling diverse types of assets.
+
+### Implement
+
+```rust
+pub struct MultiAsset {
+	pub id: AssetId,
+	pub fun: Fungibility,
+}
+```
+
+This represents the core expression of assets in XCM, introducing two key fields: `id` and `fun`.
+
+```rust
+pub enum AssetId {
+	Concrete(MultiLocation),
+	Abstract([u8; 32]),
+}
+```
+
+The `id` field serves as the identifier for assets and supports two approaches: **Concrete** and **Abstract**.
+
+For Concrete asset identity, `MultiLocation` is utilized to provide asset positioning. On the other hand, Abstract asset identity employs an abstract location, which represents a name that may refer to different specific locations on various chains and at different times.
+
+The `fun` field indicates that `MultiAsset` supports two different types of tokens: **Fungible** and **Non-Fungible**. This is straightforward to understand.
+
+For Fungible Tokens (FT), the quantity of tokens needs to be specified, represented by a non-zero numeric value. In contrast, Non-Fungible Tokens (NFT) do not require a quantity; instead, they require an index or another data type that uniquely identifies the instance.
+
+As the fundamental data structure, `MultiAsset` is complemented by additional composite structures in XCM, facilitating developers in utilizing cross-chain asset identification more effectively.
+
+#### MultiAssets
+
+Indeed, this is easy to grasp. Developers can use `MultiAssets` to indicate a group of MultiAsset, which essentially takes the form of a Vector of MultiAsset.
+
+```rust
+pub struct MultiAssets(Vec<MultiAsset>);
+```
+
+#### WildMultiAsset
+
+`WildMultiAsset` offers developers a wildcard that allows for matching one or more `MultiAssets`.
+
+```rust
+pub enum WildMultiAsset {
+	All,
+	AllOf { id: AssetId, fun: WildFungibility },
+	AllCounted(#[codec(compact)] u32),
+	AllOfCounted {
+		id: AssetId,
+		fun: WildFungibility,
+		#[codec(compact)]
+		count: u32,
+	},
+}
+```
+
+Of which:
+
+- **All** - Represents all assets and does not require any processing.
+
+- **AllOf** - Represents all assets of a specific type and fungibility. By specifying an `AssetId` and `WildFungibility` parameter, it encompasses all assets that share the same type and fungibility.
+
+- **AllCounted** - Represents a defined quantity of assets. It signifies all assets held within a certain maximum limit.
+
+- **AllOfCounted** - Represents a specific quantity of assets of a particular type and fungibility. Similar to the second variant, it also imposes a maximum limit on the quantity. By providing an `AssetId`, `WildFungibility`, and count parameter, it denotes a certain number of assets held that possess the same type and fungibility.
+
+#### MultiAssetFilter
+
+This serves as a filter for `MultiAsset`, combining `MultiAssets` and `WildMultiAsset`. It enables the specification of either a wildcard or a specific (non-wildcard) list of assets.
+
+```rust
+pub enum MultiAssetFilter {
+	Definite(MultiAssets),
+	Wild(WildMultiAsset),
+}
+```
+
+Of which:
+
+- **Definite** - Represents a specific asset filter. It uses the specified MultiAssets structure as a filter to exclusively select assets that match the MultiAssets structure entirely.
+
+- **Wild** - Represents a wildcard asset filter. It employs the specified WildMultiAsset structure as a filter to select assets that meet the wildcard conditions. The wildcard can encompass all assets of a specific type and fungibility or a specific quantity of assets.
+
+## Outros
+
+The in-depth analysis of `MultiLocation` and `MultiAsset` presented above highlights their significance for developers before embarking on the use of XCM. Similar to XCM's goal of ensuring unambiguous cross-chain asset transfers and their destinations, clarity and determinism play vital roles in facilitating seamless cross-chain information transmission.
